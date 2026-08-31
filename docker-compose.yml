@@ -1,0 +1,50 @@
+# 个人工作中台：Homarr（统一入口导航）+ n8n（AI 工作流调度）
+# 启动：docker compose up -d
+# Homarr:  http://localhost:7575
+# n8n:     http://localhost:5678  （首次访问需注册管理员账号，数据保存在本地）
+
+services:
+  # ============ n8n：AI 工作流编排与调度中枢 ============
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: workbench-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - TZ=Asia/Shanghai
+      - GENERIC_TIMEZONE=Asia/Shanghai
+      # 本地 http 访问需要关闭安全 Cookie，否则无法登录
+      - N8N_SECURE_COOKIE=false
+      # 任务队列超时（长时间运行的 AI 节点不会被掐断）
+      - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - n8n_files:/files
+    networks:
+      - workbench
+
+  # ============ Homarr：统一入口门户（拖拽配置，零 YAML） ============
+  homarr:
+    image: ghcr.io/homarr-labs/homarr:latest
+    container_name: workbench-homarr
+    restart: unless-stopped
+    ports:
+      - "7575:7575"
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - homarr_config:/appdata/config
+      # 挂载 Docker Socket 后，Homarr 可自动发现本机容器并显示运行状态
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - workbench
+
+volumes:
+  n8n_data:
+  n8n_files:
+  homarr_config:
+
+networks:
+  workbench:
+    driver: bridge
