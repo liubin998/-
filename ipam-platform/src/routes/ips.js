@@ -9,7 +9,7 @@ import { diagnoseIp } from '../domain/diagnosis.js';
 import { isValidIp } from '../domain/ip.js';
 import { parsePagination, paged } from '../domain/util.js';
 import { recordAudit } from '../domain/audit.js';
-import { manualProbe } from '../collector/runner.js';
+import { manualProbe } from '../collector/probe.js';
 import { config } from '../config.js';
 import { longestPrefixMatch } from '../domain/subnet.js';
 

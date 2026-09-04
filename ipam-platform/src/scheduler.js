@@ -1,5 +1,6 @@
 import { config } from './config.js';
-import { runCollectAll, runReconcileAll } from './collector/runner.js';
+import { runCollectAll } from './collector/collect.js';
+import { runReconcileAll } from './collector/reconcile.js';
 import { purgeExpired } from './domain/observations.js';
 import { recordAudit } from './domain/audit.js';
 

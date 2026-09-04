@@ -4,7 +4,7 @@ import { wrap, httpError } from './errors.js';
 import { authMiddleware, requireCap, assertBranch } from '../domain/authHelpers.js';
 import { createDevice, getDevice, updateDevice, DEVICE_ROLES, PROTOCOLS } from '../domain/devices.js';
 import { recordAudit } from '../domain/audit.js';
-import { runCollectForDevice } from '../collector/runner.js';
+import { runCollectForDevice } from '../collector/collect.js';
 import { SangforAcAdapter } from '../collector/adapters/sangfor.js';
 import { HuaweiSwitchAdapter } from '../collector/adapters/huawei.js';
 
