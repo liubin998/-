@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企业 IP 地址与网段资产管理平台</title>
+<style>
+  :root {
+    --bg: #f4f6f9; --panel: #ffffff; --border: #e3e8ef; --text: #1f2937;
+    --muted: #6b7280; --primary: #2563eb; --primary-dark: #1d4ed8;
+    --green: #16a34a; --red: #dc2626; --amber: #d97706; --purple: #7c3aed;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+  a { color: var(--primary); text-decoration: none; cursor: pointer; }
+  a:hover { text-decoration: underline; }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 210px; background: #111827; color: #e5e7eb; flex-shrink: 0; display: flex; flex-direction: column; }
+  .sidebar .brand { padding: 18px 16px; font-weight: 700; font-size: 15px; color: #fff; border-bottom: 1px solid #1f2937; line-height: 1.4; }
+  .sidebar nav { flex: 1; padding: 10px 0; }
+  .sidebar nav a { display: block; padding: 10px 18px; color: #d1d5db; font-size: 14px; }
+  .sidebar nav a:hover { background: #1f2937; text-decoration: none; }
+  .sidebar nav a.active { background: var(--primary); color: #fff; }
+  .sidebar .userbox { padding: 14px 16px; border-top: 1px solid #1f2937; font-size: 12px; color: #9ca3af; }
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar { background: var(--panel); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; gap: 12px; }
+  .topbar input[type=search] { flex: 1; max-width: 420px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+  .content { padding: 20px 24px; flex: 1; }
+  h1 { font-size: 18px; margin-bottom: 14px; }
+  h2 { font-size: 15px; margin: 18px 0 10px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+  .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .stat .num { font-size: 26px; font-weight: 700; color: var(--primary); }
+  .stat .label { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  th { background: #f9fafb; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  tr:hover td { background: #f8fafc; }
+  .btn { display: inline-block; padding: 7px 14px; border-radius: 6px; border: 1px solid var(--border); background: #fff; color: var(--text); cursor: pointer; font-size: 13px; }
+  .btn:hover { border-color: var(--primary); color: var(--primary); }
+  .btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .btn.primary:hover { background: var(--primary-dark); color: #fff; }
+  .btn.danger { background: var(--red); border-color: var(--red); color: #fff; }
+  .btn.sm { padding: 4px 10px; font-size: 12px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  input, select, textarea { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: #fff; color: var(--text); }
+  input:focus, select:focus, textarea:focus { outline: 2px solid #bfdbfe; border-color: var(--primary); }
+  form.inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+  .b-gray { background: #f3f4f6; color: #4b5563; }
+  .b-green { background: #dcfce7; color: #15803d; }
+  .b-red { background: #fee2e2; color: #b91c1c; }
+  .b-amber { background: #fef3c7; color: #b45309; }
+  .b-blue { background: #dbeafe; color: #1d4ed8; }
+  .b-purple { background: #ede9fe; color: #6d28d9; }
+  .muted { color: var(--muted); }
+  .tag { display: inline-block; background: #eef2ff; color: #4338ca; border-radius: 4px; padding: 1px 6px; font-size: 12px; margin: 1px 2px; }
+  .err { color: var(--red); }
+  .ok { color: var(--green); }
+  .pager { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+  .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: flex-start; justify-content: center; padding: 60px 16px; z-index: 100; overflow-y: auto; }
+  .modal { background: #fff; border-radius: 10px; width: 560px; max-width: 100%; padding: 20px; }
+  .modal h3 { font-size: 16px; margin-bottom: 14px; }
+  .modal .field { margin-bottom: 12px; }
+  .modal .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .modal .field input, .modal .field select, .modal .field textarea { width: 100%; }
+  .modal .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .toast { position: fixed; top: 18px; right: 18px; background: #111827; color: #fff; padding: 10px 16px; border-radius: 8px; z-index: 200; font-size: 13px; max-width: 420px; }
+  .toast.error { background: var(--red); }
+  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e3a8a, #2563eb); }
+  .login-box { background: #fff; border-radius: 12px; padding: 36px; width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  .login-box h1 { font-size: 20px; margin-bottom: 6px; }
+  .login-box p { color: var(--muted); margin-bottom: 22px; font-size: 13px; }
+  .login-box input { width: 100%; margin-bottom: 12px; padding: 10px 12px; }
+  .login-box .btn { width: 100%; padding: 10px; }
+  .kv { display: grid; grid-template-columns: 140px 1fr; gap: 6px 12px; font-size: 13px; }
+  .kv .k { color: var(--muted); }
+  .pre { background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 8px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+  .chat { display: flex; flex-direction: column; gap: 10px; max-width: 860px; }
+  .chat .msg { padding: 10px 14px; border-radius: 10px; max-width: 85%; white-space: pre-wrap; }
+  .chat .q { align-self: flex-end; background: var(--primary); color: #fff; }
+  .chat .a { align-self: flex-start; background: #fff; border: 1px solid var(--border); }
+  .chat .caveat { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 14px; }
+  .tabs button { border: none; background: none; padding: 8px 16px; cursor: pointer; font-size: 14px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -2px; }
+  .tabs button.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+  .usage-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; width: 140px; display: inline-block; vertical-align: middle; margin-right: 6px; }
+  .usage-bar > div { height: 100%; background: var(--primary); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+const $app = document.getElementById('app');
+
+const STATUS_ZH = { free: '空闲', occupied: '已占用', reserved: '预留', released: '已释放', conflict: '冲突', unavailable: '不可用', pending: '待定' };
+const STATUS_BADGE = { free: 'b-green', occupied: 'b-blue', reserved: 'b-purple', released: 'b-gray', conflict: 'b-red', unavailable: 'b-gray', pending: 'b-amber' };
+const FIELD_STATUS_ZH = { confirmed_use: '明确使用', possible_use: '可能使用', not_found: '未发现使用', undetermined: '无法判断', ledger_conflict: '台账冲突', incomplete: '证据不足' };
+const FIELD_STATUS_BADGE = { confirmed_use: 'b-green', possible_use: 'b-blue', not_found: 'b-gray', undetermined: 'b-amber', ledger_conflict: 'b-red', incomplete: 'b-amber' };
+const SUBNET_STATUS_ZH = { active: '在用', planned: '规划中', retired: '已退役' };
+const KIND_ZH = { lan: '局域网', wan: '广域网', mgmt: '管理网', wifi: '无线', cloud: '云上', p2p: '互联', reserved: '预留', other: '其他' };
+const TICKET_STATUS_ZH = { open: '待处理', in_progress: '处理中', resolved: '已解决', closed: '已关闭' };
+const TICKET_STATUS_BADGE = { open: 'b-red', in_progress: 'b-amber', resolved: 'b-green', closed: 'b-gray' };
+const SEVERITY_ZH = { low: '低', medium: '中', high: '高', critical: '严重' };
+const DEVICE_STATUS_ZH = { online: '在线', offline: '离线', error: '异常', unknown: '未知' };
+const DEVICE_STATUS_BADGE = { online: 'b-green', offline: 'b-red', error: 'b-amber', unknown: 'b-gray' };
+const ROLE_ZH = { hq_admin: '总部管理员', branch_admin: '分支管理员', maintainer: '运维人员', viewer: '只读用户', auditor: '审计员' };
+const LEVEL_BADGE = { ok: 'b-green', warning: 'b-amber', error: 'b-red', conflict: 'b-purple' };
+const LEVEL_ZH = { ok: '正常', warning: '警告', error: '错误', conflict: '冲突' };
+
+const state = {
+  token: localStorage.getItem('ipam_token') || null,
+  me: null,
+  branches: [],
+};
+
+function toast(msg, isError) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (isError ? ' error' : '');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+async function api(path, { method = 'GET', body, raw } = {}) {
+  const headers = {};
+  if (state.token) headers.Authorization = `Bearer ${state.token}`;
+  if (body !== undefined && !raw) headers['Content-Type'] = 'application/json';
+  if (raw) delete headers['Content-Type'];
+  const res = await fetch('/api' + path, { method, headers, body: raw ? body : body === undefined ? undefined : JSON.stringify(body) });
+  if (res.status === 401 && state.token) {
+    logout(false);
+    throw { status: 401, message: '会话已过期，请重新登录' };
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw { status: res.status, message: data.message || data.error || '请求失败', ...data };
+  return data;
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function badge(text, cls) { return `<span class="badge ${cls || 'b-gray'}">${esc(text)}</span>`; }
+function fmtTime(t) { return t ? String(t).replace('T', ' ').slice(0, 19) : '-'; }
+function branchName(id) { const b = state.branches.find((x) => x.id === id); return b ? b.name : (id == null ? '未指定' : `#${id}`); }
+
+function logout(callApi) {
+  if (callApi && state.token) api('/auth/logout', { method: 'POST' }).catch(() => {});
+  state.token = null; state.me = null;
+  localStorage.removeItem('ipam_token');
+  location.hash = '#/login';
+  render();
+}
+
+function hasCap(cap) { return state.me && Array.isArray(state.me.caps) && state.me.caps.includes(cap); }
+
+function nav() {
+  const items = [
+    ['#/dashboard', '仪表盘', 'view'],
+    ['#/subnets', '网段管理', 'view'],
+    ['#/ips', 'IP 台账', 'view'],
+    ['#/devices', '设备与采集', 'view'],
+    ['#/tickets', '协同事项', 'view'],
+    ['#/import', '导入中心', 'import'],
+    ['#/audit', '审计日志', 'audit_view'],
+    ['#/ai', 'AI 查询助手', 'view'],
+  ];
+  if (state.me && state.me.is_hq_admin) items.push(['#/admin', '系统管理', 'user']);
+  const seg = '#/' + ((location.hash || '#/dashboard').slice(2).split(/[/?]/)[0] || 'dashboard');
+  return items
+    .filter(([, , cap]) => hasCap(cap))
+    .map(([href, label]) => `<a href="${href}" class="${href === seg ? 'active' : ''}">${label}</a>`)
+    .join('');
+}
+
+function shell(content) {
+  return `<div class="layout">
+    <div class="sidebar">
+      <div class="brand">企业 IP 地址与<br>网段资产管理平台</div>
+      <nav>${nav()}</nav>
+      <div class="userbox">
+        ${esc(state.me ? state.me.display_name || state.me.username : '')}
+        <div class="muted">${esc(state.me ? ROLE_ZH[state.me.role] || state.me.role : '')}</div>
+        <a style="color:#93c5fd" onclick="window.__logout()">退出登录</a>
+      </div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <input type="search" id="globalSearch" placeholder="全局搜索：IP / 网段 / MAC / 设备 / 事项…" />
+        <span class="muted">权限范围：${state.me && state.me.is_hq_admin ? '全部数据' : (state.me ? `${(state.me.branch_ids || []).length} 个分支` : '')}</span>
+      </div>
+      <div class="content">${content}</div>
+    </div>
+  </div>`;
+}
+window.__logout = () => logout(true);
+
+function modal(title, bodyHtml, onSubmit, submitText) {
+  const mask = document.createElement('div');
+  mask.className = 'modal-mask';
+  mask.innerHTML = `<div class="modal">
+    <h3>${esc(title)}</h3>
+    <div class="modal-body">${bodyHtml}</div>
+    ${submitText ? `<div class="actions">
+      <button class="btn" data-act="cancel">取消</button>
+      <button class="btn primary" data-act="ok">${esc(submitText)}</button>
+    </div>` : ''}
+  </div>`;
+  document.body.appendChild(mask);
+  mask.addEventListener('click', (e) => {
+    if (e.target === mask) { mask.remove(); return; }
+    const act = e.target.dataset && e.target.dataset.act;
+    if (act === 'cancel') mask.remove();
+    if (act === 'ok') {
+      Promise.resolve(onSubmit(mask)).then((keep) => { if (!keep) mask.remove(); })
+        .catch((err) => toast(err.message || '操作失败', true));
+    }
+  });
+  return mask;
+}
+
+function field(label, inner) { return `<div class="field"><label>${esc(label)}</label>${inner}</div>`; }
+function fv(mask, name) { const el = mask.querySelector(`[name="${name}"]`); return el ? el.value : ''; }
+function branchOptions(sel) {
+  return `<option value="">未指定</option>` + state.branches.map((b) => `<option value="${b.id}" ${sel == b.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('');
+}
+
+function pager(page, total, limit, onGo) {
+  const pages = Math.max(1, Math.ceil(total / limit));
+  const wrapId = 'pg' + Math.random().toString(36).slice(2, 8);
+  setTimeout(() => {
+    const el = document.getElementById(wrapId);
+    if (el) el.querySelectorAll('[data-page]').forEach((b) => b.addEventListener('click', () => onGo(Number(b.dataset.page))));
+  }, 0);
+  return `<div class="pager" id="${wrapId}">
+    <button class="btn sm" data-page="${page - 1}" ${page <= 1 ? 'disabled' : ''}>上一页</button>
+    <span class="muted">第 ${page} / ${pages} 页，共 ${total} 条</span>
+    <button class="btn sm" data-page="${page + 1}" ${page >= pages ? 'disabled' : ''}>下一页</button>
+  </div>`;
+}
+
+async function ensureBranches() {
+  if (!state.branches.length) {
+    try { const r = await api('/admin/branches'); state.branches = r.branches || []; } catch { state.branches = []; }
+  }
+}
+
+function render() {
+  const hash = location.hash || '#/dashboard';
+  const [route, ...rest] = hash.replace(/^#\//, '').split('/');
+  if (!state.token) { renderLogin(); return; }
+  if (!state.me) {
+    api('/auth/me').then((r) => { state.me = r.user; render(); }).catch(() => logout(false));
+    $app.innerHTML = `<div class="content muted">加载中…</div>`;
+    return;
+  }
+  const views = {
+    login: renderLogin, dashboard: viewDashboard, subnets: () => rest.length ? viewSubnet(decodeURIComponent(rest[0])) : viewSubnets(),
+    ips: () => rest.length ? viewIp(decodeURIComponent(rest[0])) : viewIps(),
+    devices: viewDevices, tickets: () => rest.length ? viewTicket(rest[0]) : viewTickets(),
+    import: viewImport, audit: viewAudit, ai: viewAi, admin: viewAdmin,
+  };
+  const fn = views[route] || viewDashboard;
+  Promise.resolve(fn()).then((html) => {
+    if (!state.token) return;
+    $app.innerHTML = route === 'login' ? html : shell(html);
+    bindGlobalSearch();
+  }).catch((e) => { $app.innerHTML = shell(`<div class="card err">${esc(e.message || '加载失败')}</div>`); });
+}
+
+function bindGlobalSearch() {
+  const el = document.getElementById('globalSearch');
+  if (!el) return;
+  el.addEventListener('keydown', async (e) => {
+    if (e.key !== 'Enter') return;
+    const q = el.value.trim();
+    if (!q) return;
+    try {
+      const r = await api('/search?q=' + encodeURIComponent(q));
+      const seg = (title, rows, html) => rows.length ? `<h2>${title}（${rows.length}）</h2><div class="card">${html(rows)}</div>` : '';
+      const content = `
+        ${seg('IP 台账', r.ips, (rows) => `<table><tr><th>地址</th><th>状态</th><th>MAC</th><th>描述</th></tr>${rows.map((x) => `<tr><td><a href="#/ips/${encodeURIComponent(x.address)}">${esc(x.address)}</a></td><td>${badge(STATUS_ZH[x.business_status] || x.business_status, STATUS_BADGE[x.business_status])}</td><td>${esc(x.mac || '-')}</td><td>${esc(x.description || '')}</td></tr>`).join('')}</table>`)}
+        ${seg('网段', r.subnets, (rows) => `<table><tr><th>CIDR</th><th>用途</th><th>描述</th></tr>${rows.map((x) => `<tr><td><a href="#/subnets/${x.id}">${esc(x.cidr)}</a></td><td>${esc(x.purpose || '-')}</td><td>${esc(x.description || '')}</td></tr>`).join('')}</table>`)}
+        ${seg('设备', r.devices, (rows) => `<table><tr><th>名称</th><th>厂商</th><th>状态</th></tr>${rows.map((x) => `<tr><td>${esc(x.name)}</td><td>${esc(x.vendor)}</td><td>${badge(DEVICE_STATUS_ZH[x.status] || x.status, DEVICE_STATUS_BADGE[x.status])}</td></tr>`).join('')}</table>`)}
+        ${seg('协同事项', r.tickets, (rows) => `<table><tr><th>标题</th><th>类型</th><th>状态</th></tr>${rows.map((x) => `<tr><td><a href="#/tickets/${x.id}">${esc(x.title)}</a></td><td>${esc(x.type)}</td><td>${badge(TICKET_STATUS_ZH[x.status] || x.status, TICKET_STATUS_BADGE[x.status])}</td></tr>`).join('')}</table>`)}
+        ${(!r.ips.length && !r.subnets.length && !r.devices.length && !r.tickets.length) ? '<div class="card muted">未找到匹配结果</div>' : ''}`;
+      $app.innerHTML = shell(`<h1>搜索："${esc(q)}"</h1>${content}`);
+      bindGlobalSearch();
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+function renderLogin() {
+  $app.innerHTML = `<div class="login-wrap"><div class="login-box">
+    <h1>IP 资产管理平台</h1>
+    <p>企业 IP 地址与网段资产管理 · 事实台账 + 现场观测 + 规则引擎诊断</p>
+    <input id="lu" placeholder="用户名" autocomplete="username" />
+    <input id="lp" type="password" placeholder="密码" autocomplete="current-password" />
+    <button class="btn primary" id="lbtn">登 录</button>
+    <div id="lerr" class="err" style="margin-top:10px;font-size:13px"></div>
+  </div></div>`;
+  const doLogin = async () => {
+    const btn = document.getElementById('lbtn');
+    btn.disabled = true;
+    try {
+      const r = await api('/auth/login', { method: 'POST', body: { username: document.getElementById('lu').value.trim(), password: document.getElementById('lp').value } });
+      state.token = r.token; state.me = r.user;
+      localStorage.setItem('ipam_token', r.token);
+      location.hash = '#/dashboard';
+      render();
+    } catch (e) {
+      document.getElementById('lerr').textContent = e.message || '登录失败';
+      btn.disabled = false;
+    }
+  };
+  document.getElementById('lbtn').addEventListener('click', doLogin);
+  document.getElementById('lp').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+}
+
+async function viewDashboard() {
+  const s = await api('/dashboard/summary');
+  const led = {};
+  (s.ledger_by_status || []).forEach((r) => { led[r.business_status] = r.c; });
+  const tks = {};
+  (s.tickets_by_status || []).forEach((r) => { tks[r.status] = r.c; });
+  const dev = {};
+  (s.devices || []).forEach((r) => { dev[r.status] = r.c; });
+  const sched = s.scheduler || {};
+  return `
+    <h1>仪表盘</h1>
+    <div class="cards">
+      <div class="stat"><div class="num">${s.subnets}</div><div class="label">网段总数</div></div>
+      <div class="stat"><div class="num">${s.ledger_total}</div><div class="label">台账 IP 总数</div></div>
+      <div class="stat"><div class="num" style="color:var(--red)">${s.open_tickets}</div><div class="label">未决协同事项</div></div>
+      <div class="stat"><div class="num">${dev.online || 0}<span class="muted" style="font-size:14px"> / ${s.devices.reduce((a, b) => a + b.c, 0)}</span></div><div class="label">设备在线 / 总数</div></div>
+    </div>
+    <div class="cards">
+      <div class="card"><h2 style="margin-top:0">台账状态分布</h2>
+        ${Object.keys(STATUS_ZH).map((k) => led[k] ? `<div style="margin:4px 0">${badge(STATUS_ZH[k], STATUS_BADGE[k])} ${led[k]}</div>` : '').join('') || '<span class="muted">暂无数据</span>'}
+      </div>
+      <div class="card"><h2 style="margin-top:0">协同事项状态</h2>
+        ${Object.keys(TICKET_STATUS_ZH).map((k) => tks[k] ? `<div style="margin:4px 0">${badge(TICKET_STATUS_ZH[k], TICKET_STATUS_BADGE[k])} ${tks[k]}</div>` : '').join('') || '<span class="muted">暂无数据</span>'}
+      </div>
+      <div class="card"><h2 style="margin-top:0">调度器</h2>
+        <div class="kv">
+          <span class="k">运行状态</span><span>${sched.running ? badge('运行中', 'b-green') : badge('未启动', 'b-gray')}</span>
+          <span class="k">采集间隔</span><span>${sched.collect_interval_ms ? sched.collect_interval_ms / 1000 + 's' : '-'}</span>
+          <span class="k">对账间隔</span><span>${sched.reconcile_interval_ms ? sched.reconcile_interval_ms / 1000 + 's' : '-'}</span>
+          <span class="k">最近采集</span><span>${fmtTime(sched.last_collect_at)}</span>
+          <span class="k">最近对账</span><span>${fmtTime(sched.last_reconcile_at)}</span>
+        </div>
+      </div>
+    </div>
+    <div class="card"><h2 style="margin-top:0">最近采集任务</h2>
+      <table><tr><th>设备</th><th>状态</th><th>完整性</th><th>观测条数</th><th>开始时间</th><th>耗时</th></tr>
+      ${(s.recent_runs || []).map((r) => `<tr>
+        <td>${esc(r.device_name)}</td>
+        <td>${r.status === 'success' ? badge('成功', 'b-green') : r.status === 'running' ? badge('运行中', 'b-amber') : badge('失败', 'b-red')}</td>
+        <td>${r.completeness === 'complete' ? badge('完整', 'b-green') : r.completeness === 'incomplete' ? badge('不完整', 'b-amber') : badge(r.completeness || '-', 'b-gray')}</td>
+        <td>${r.observation_count ?? 0}</td>
+        <td>${fmtTime(r.started_at)}</td>
+        <td>${r.duration_ms != null ? r.duration_ms + 'ms' : '-'}</td>
+      </tr>`).join('') || '<tr><td colspan="6" class="muted">暂无采集记录</td></tr>'}
+      </table>
+    </div>`;
+}
+
+async function viewSubnets() {
+  await ensureBranches();
+  const params = new URLSearchParams(location.search ? '' : '');
+  const q = new URLSearchParams((location.hash.split('?')[1]) || '');
+  const page = Number(q.get('page')) || 1;
+  const qs = new URLSearchParams({ page, limit: 20 });
+  for (const k of ['branch_id', 'status', 'kind', 'q']) if (q.get(k)) qs.set(k, q.get(k));
+  const r = await api('/subnets?' + qs.toString());
+  const setFilter = (k, v) => {
+    const cur = new URLSearchParams(location.hash.split('?')[1] || '');
+    if (v) cur.set(k, v); else cur.delete(k);
+    cur.delete('page');
+    location.hash = '#/subnets?' + cur.toString();
+  };
+  setTimeout(() => {
+    ['fbranch', 'fstatus', 'fkind'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', () => setFilter(id.slice(1).replace('branch', 'branch_id'), el.value));
+    });
+    const fq = document.getElementById('fq');
+    if (fq) fq.addEventListener('keydown', (e) => { if (e.key === 'Enter') setFilter('q', fq.value.trim()); });
+    const addBtn = document.getElementById('addSubnet');
+    if (addBtn) addBtn.addEventListener('click', addSubnetModal);
+    const ovBtn = document.getElementById('overlapBtn');
+    if (ovBtn) ovBtn.addEventListener('click', showOverlaps);
+  }, 0);
+  return `
+    <h1>网段管理</h1>
+    <div class="toolbar">
+      <select id="fbranch">${branchOptions(q.get('branch_id'))}</select>
+      <select id="fstatus"><option value="">全部状态</option>${Object.keys(SUBNET_STATUS_ZH).map((k) => `<option value="${k}" ${q.get('status') === k ? 'selected' : ''}>${SUBNET_STATUS_ZH[k]}</option>`).join('')}</select>
+      <select id="fkind"><option value="">全部类型</option>${Object.keys(KIND_ZH).map((k) => `<option value="${k}" ${q.get('kind') === k ? 'selected' : ''}>${KIND_ZH[k]}</option>`).join('')}</select>
+      <input id="fq" placeholder="搜索 CIDR/用途/描述" value="${esc(q.get('q') || '')}" />
+      ${hasCap('create') ? '<button class="btn primary" id="addSubnet">新增网段</button>' : ''}
+      <button class="btn" id="overlapBtn">重叠检测</button>
+    </div>
+    <table>
+      <tr><th>CIDR</th><th>分支</th><th>类型</th><th>状态</th><th>用途</th><th>网关</th><th>VLAN</th><th>操作</th></tr>
+      ${r.items.map((s) => `<tr>
+        <td><a href="#/subnets/${s.id}">${esc(s.cidr)}</a></td>
+        <td>${esc(branchName(s.branch_id))}</td>
+        <td>${KIND_ZH[s.kind] || esc(s.kind)}</td>
+        <td>${badge(SUBNET_STATUS_ZH[s.status] || s.status, s.status === 'active' ? 'b-green' : 'b-gray')}</td>
+        <td>${esc(s.purpose || '-')}</td>
+        <td>${esc(s.gateway || '-')}</td>
+        <td>${esc(s.vlan ?? '-')}</td>
+        <td><a href="#/subnets/${s.id}">详情</a></td>
+      </tr>`).join('') || '<tr><td colspan="8" class="muted">暂无网段</td></tr>'}
+    </table>
+    ${pager(r.page, r.total, r.limit, (p) => { const cur = new URLSearchParams(location.hash.split('?')[1] || ''); cur.set('page', p); location.hash = '#/subnets?' + cur.toString(); })}`;
+}
+
+function addSubnetModal() {
+  modal('新增网段', `
+    ${field('CIDR *', '<input name="cidr" placeholder="如 192.168.10.0/24" />')}
+    ${field('分支', `<select name="branch_id">${branchOptions()}</select>`)}
+    ${field('类型', `<select name="kind">${Object.keys(KIND_ZH).map((k) => `<option value="${k}">${KIND_ZH[k]}</option>`).join('')}</select>`)}
+    ${field('状态', `<select name="status">${Object.keys(SUBNET_STATUS_ZH).map((k) => `<option value="${k}">${SUBNET_STATUS_ZH[k]}</option>`).join('')}</select>`)}
+    ${field('用途', '<input name="purpose" />')}
+    ${field('网关', '<input name="gateway" />')}
+    ${field('VLAN', '<input name="vlan" type="number" />')}
+    ${field('描述', '<textarea name="description" rows="2"></textarea>')}
+  `, async (mask) => {
+    const body = {
+      cidr: fv(mask, 'cidr'), branch_id: fv(mask, 'branch_id') || null, kind: fv(mask, 'kind'),
+      status: fv(mask, 'status'), purpose: fv(mask, 'purpose'), gateway: fv(mask, 'gateway'),
+      vlan: fv(mask, 'vlan') || null, description: fv(mask, 'description'),
+    };
+    await api('/subnets', { method: 'POST', body });
+    toast('网段创建成功');
+    render();
+  }, '创建');
+}
+
+async function showOverlaps() {
+  const r = await api('/subnets/overlaps');
+  modal('网段重叠检测', r.overlaps.length
+    ? `<table><tr><th>网段 A</th><th>网段 B</th><th>关系</th></tr>${r.overlaps.map((o) => `<tr><td>${esc(o.a_cidr || o.cidr_a || JSON.stringify(o.a))}</td><td>${esc(o.b_cidr || o.cidr_b || JSON.stringify(o.b))}</td><td>${esc(o.relation || o.type || '-')}</td></tr>`).join('')}</table>`
+    : '<p class="ok">未发现重叠网段</p>', () => {}, '关闭');
+}
+
+async function viewSubnet(id) {
+  await ensureBranches();
+  const r = await api('/subnets/' + id);
+  const s = r.subnet;
+  const st = r.stats || {};
+  const ipsR = await api(`/subnets/${id}/ips?page=1&limit=20`);
+  setTimeout(() => {
+    document.getElementById('freeBtn')?.addEventListener('click', async () => {
+      const n = Number(document.getElementById('freeCount').value) || 5;
+      try {
+        const fr = await api(`/subnets/${id}/free?count=${n}`);
+        modal(`空闲 IP 推荐（${fr.free.length} 个）`, fr.free.length
+          ? `<p style="margin-bottom:8px">${fr.free.map((x) => `<span class="tag">${esc(typeof x === 'string' ? x : x.address)}</span>`).join('')}</p>`
+          : '<p class="muted">该网段已无空闲地址</p>', () => {}, '关闭');
+      } catch (e) { toast(e.message, true); }
+    });
+    document.getElementById('diagSubnet')?.addEventListener('click', async () => {
+      try {
+        const dr = await api(`/subnets/${id}/diagnosis?limit=100`);
+        modal('网段诊断（冲突/未登记线索）', dr.items.length
+          ? `<table><tr><th>IP</th><th>结论</th><th>说明</th></tr>${dr.items.map((x) => `<tr><td><a href="#/ips/${encodeURIComponent(x.address || x.ip)}">${esc(x.address || x.ip)}</a></td><td>${badge(FIELD_STATUS_ZH[x.field_status] || x.field_status, FIELD_STATUS_BADGE[x.field_status])}</td><td>${esc(x.reason || x.summary || '')}</td></tr>`).join('')}</table>`
+          : '<p class="ok">该网段暂无冲突或未登记线索</p>', () => {}, '关闭');
+      } catch (e) { toast(e.message, true); }
+    });
+    document.getElementById('editSubnet')?.addEventListener('click', () => editSubnetModal(s));
+    document.getElementById('delSubnet')?.addEventListener('click', async () => {
+      if (!confirm(`确认删除网段 ${s.cidr}？该操作为高危操作，将影响其下所有台账 IP。`)) return;
+      try { await api('/subnets/' + id, { method: 'DELETE' }); toast('网段已删除'); location.hash = '#/subnets'; } catch (e) { toast(e.message, true); }
+    });
+  }, 0);
+  const usedPct = st.total ? Math.round(((st.occupied || 0) + (st.reserved || 0)) / st.total * 100) : 0;
+  return `
+    <h1><a href="#/subnets">网段</a> / ${esc(s.cidr)} ${badge(SUBNET_STATUS_ZH[s.status] || s.status, s.status === 'active' ? 'b-green' : 'b-gray')}</h1>
+    <div class="cards">
+      <div class="stat"><div class="num">${st.total ?? '-'}</div><div class="label">地址总数（可用主机数 ${st.usable ?? '-'})</div></div>
+      <div class="stat"><div class="num" style="color:var(--green)">${st.free ?? '-'}</div><div class="label">空闲</div></div>
+      <div class="stat"><div class="num">${st.occupied ?? '-'}</div><div class="label">已占用</div></div>
+      <div class="stat"><div class="num" style="color:var(--purple)">${st.reserved ?? '-'}</div><div class="label">预留</div></div>
+      <div class="stat"><div class="num" style="color:var(--red)">${st.conflict ?? '-'}</div><div class="label">冲突</div></div>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">基本信息</h2>
+      <div class="kv">
+        <span class="k">分支</span><span>${esc(branchName(s.branch_id))}</span>
+        <span class="k">类型</span><span>${KIND_ZH[s.kind] || esc(s.kind)}</span>
+        <span class="k">用途</span><span>${esc(s.purpose || '-')}</span>
+        <span class="k">网关 / VLAN</span><span>${esc(s.gateway || '-')} / ${esc(s.vlan ?? '-')}</span>
+        <span class="k">地址范围</span><span>${esc(s.first_usable || '')} ~ ${esc(s.last_usable || '')}</span>
+        <span class="k">使用率</span><span><span class="usage-bar"><div style="width:${usedPct}%"></div></span>${usedPct}%</span>
+        <span class="k">描述</span><span>${esc(s.description || '-')}</span>
+        <span class="k">创建时间</span><span>${fmtTime(s.created_at)}</span>
+      </div>
+      <div class="toolbar" style="margin-top:14px">
+        <input id="freeCount" type="number" value="5" style="width:80px" />
+        <button class="btn" id="freeBtn">查找空闲 IP</button>
+        <button class="btn" id="diagSubnet">网段诊断</button>
+        ${hasCap('edit') ? `<button class="btn" id="editSubnet">编辑</button>` : ''}
+        ${state.me && state.me.is_hq_admin ? `<button class="btn danger" id="delSubnet">删除</button>` : ''}
+      </div>
+    </div>
+    <div class="card"><h2 style="margin-top:0">网段内台账（${ipsR.total}）</h2>
+      <table><tr><th>地址</th><th>状态</th><th>MAC</th><th>对象</th><th>描述</th><th>来源</th></tr>
+      ${ipsR.items.map((x) => `<tr>
+        <td><a href="#/ips/${encodeURIComponent(x.address)}">${esc(x.address)}</a></td>
+        <td>${badge(STATUS_ZH[x.business_status] || x.business_status, STATUS_BADGE[x.business_status])}</td>
+        <td>${esc(x.mac || '-')}</td>
+        <td>${esc(x.object_name || '-')}</td>
+        <td>${esc(x.description || '')}</td>
+        <td>${esc(x.source || '-')}</td>
+      </tr>`).join('') || '<tr><td colspan="6" class="muted">暂无记录</td></tr>'}
+      </table>
+      ${pager(ipsR.page, ipsR.total, ipsR.limit, (p) => { location.hash = `#/ips?subnet_id=${id}&page=${p}`; })}
+    </div>`;
+}
+
+function editSubnetModal(s) {
+  modal('编辑网段 ' + s.cidr, `
+    ${field('状态', `<select name="status">${Object.keys(SUBNET_STATUS_ZH).map((k) => `<option value="${k}" ${s.status === k ? 'selected' : ''}>${SUBNET_STATUS_ZH[k]}</option>`).join('')}</select>`)}
+    ${field('类型', `<select name="kind">${Object.keys(KIND_ZH).map((k) => `<option value="${k}" ${s.kind === k ? 'selected' : ''}>${KIND_ZH[k]}</option>`).join('')}</select>`)}
+    ${field('用途', `<input name="purpose" value="${esc(s.purpose || '')}" />`)}
+    ${field('网关', `<input name="gateway" value="${esc(s.gateway || '')}" />`)}
+    ${field('VLAN', `<input name="vlan" type="number" value="${esc(s.vlan ?? '')}" />`)}
+    ${field('描述', `<textarea name="description" rows="2">${esc(s.description || '')}</textarea>`)}
+  `, async (mask) => {
+    await api('/subnets/' + s.id, { method: 'PATCH', body: { status: fv(mask, 'status'), kind: fv(mask, 'kind'), purpose: fv(mask, 'purpose'), gateway: fv(mask, 'gateway'), vlan: fv(mask, 'vlan') || null, description: fv(mask, 'description') } });
+    toast('已更新');
+    render();
+  }, '保存');
+}
+
+async function viewIps() {
+  await ensureBranches();
+  const q = new URLSearchParams(location.hash.split('?')[1] || '');
+  const page = Number(q.get('page')) || 1;
+  const qs = new URLSearchParams({ page, limit: 20 });
+  for (const k of ['subnet_id', 'branch_id', 'status', 'q']) if (q.get(k)) qs.set(k, q.get(k));
+  const r = await api('/ips?' + qs.toString());
+  const subnetsR = await api('/subnets?page=1&limit=200');
+  const setFilter = (k, v) => {
+    const cur = new URLSearchParams(location.hash.split('?')[1] || '');
+    if (v) cur.set(k, v); else cur.delete(k);
+    cur.delete('page');
+    location.hash = '#/ips?' + cur.toString();
+  };
+  setTimeout(() => {
+    const bind = (id, key) => document.getElementById(id)?.addEventListener('change', (e) => setFilter(key, e.target.value));
+    bind('fsubnet', 'subnet_id'); bind('fbranch', 'branch_id'); bind('fstatus', 'status');
+    document.getElementById('fq')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') setFilter('q', e.target.value.trim()); });
+    document.getElementById('addIp')?.addEventListener('click', () => ipFormModal(null, () => render()));
+    document.getElementById('probeBtn')?.addEventListener('click', () => probeModal());
+  }, 0);
+  return `
+    <h1>IP 台账</h1>
+    <div class="toolbar">
+      <select id="fsubnet"><option value="">全部网段</option>${(subnetsR.items || []).map((s) => `<option value="${s.id}" ${q.get('subnet_id') == s.id ? 'selected' : ''}>${esc(s.cidr)}</option>`).join('')}</select>
+      <select id="fbranch">${branchOptions(q.get('branch_id'))}</select>
+      <select id="fstatus"><option value="">全部状态</option>${Object.keys(STATUS_ZH).map((k) => `<option value="${k}" ${q.get('status') === k ? 'selected' : ''}>${STATUS_ZH[k]}</option>`).join('')}</select>
+      <input id="fq" placeholder="搜索 IP/MAC/描述" value="${esc(q.get('q') || '')}" />
+      ${hasCap('create') ? '<button class="btn primary" id="addIp">登记 IP</button>' : ''}
+      ${hasCap('probe') ? '<button class="btn" id="probeBtn">主动探测</button>' : ''}
+    </div>
+    <table>
+      <tr><th>地址</th><th>状态</th><th>MAC</th><th>所属网段</th><th>分支</th><th>描述</th><th>来源</th><th>更新时间</th></tr>
+      ${r.items.map((x) => `<tr>
+        <td><a href="#/ips/${encodeURIComponent(x.address)}">${esc(x.address)}</a></td>
+        <td>${badge(STATUS_ZH[x.business_status] || x.business_status, STATUS_BADGE[x.business_status])}</td>
+        <td>${esc(x.mac || '-')}</td>
+        <td>${x.subnet_cidr ? `<a href="#/subnets/${x.subnet_id}">${esc(x.subnet_cidr)}</a>` : '-'}</td>
+        <td>${esc(branchName(x.branch_id))}</td>
+        <td>${esc(x.description || '')}</td>
+        <td>${esc(x.source || '-')}</td>
+        <td>${fmtTime(x.updated_at)}</td>
+      </tr>`).join('') || '<tr><td colspan="8" class="muted">暂无记录</td></tr>'}
+    </table>
+    ${pager(r.page, r.total, r.limit, (p) => { const cur = new URLSearchParams(location.hash.split('?')[1] || ''); cur.set('page', p); location.hash = '#/ips?' + cur.toString(); })}`;
+}
+
+function ipFormModal(existing, onDone) {
+  modal(existing ? `编辑 ${existing.address}` : '登记 IP', `
+    ${!existing ? field('IP 地址 *', '<input name="address" placeholder="如 10.0.0.88" />') : ''}
+    ${field('业务状态', `<select name="business_status">${Object.keys(STATUS_ZH).map((k) => `<option value="${k}" ${(existing ? existing.business_status : 'free') === k ? 'selected' : ''}>${STATUS_ZH[k]}</option>`).join('')}</select>`)}
+    ${field('MAC', `<input name="mac" value="${esc(existing?.mac || '')}" placeholder="aa:bb:cc:dd:ee:ff" />`)}
+    ${field('分支', `<select name="branch_id">${branchOptions(existing?.branch_id)}</select>`)}
+    ${field('描述', `<textarea name="description" rows="2">${esc(existing?.description || '')}</textarea>`)}
+  `, async (mask) => {
+    const body = { business_status: fv(mask, 'business_status'), mac: fv(mask, 'mac') || null, branch_id: fv(mask, 'branch_id') || null, description: fv(mask, 'description') };
+    if (!existing) body.address = fv(mask, 'address');
+    await api(existing ? `/ips/${encodeURIComponent(existing.address)}` : '/ips', { method: existing ? 'PATCH' : 'POST', body });
+    toast(existing ? '已更新' : '已登记');
+    onDone();
+  }, '保存');
+}
+
+function probeModal() {
+  modal('主动探测', `
+    ${field('IP 地址 *', '<input name="address" placeholder="如 10.0.0.88" />')}
+    <p class="muted" style="font-size:12px">探测结果写入观测数据（icmp / tcp_port），限流 20 次/分钟。设备离线不等于目标空闲。</p>
+  `, async (mask) => {
+    const r = await api('/ips/probe', { method: 'POST', body: { address: fv(mask, 'address') } });
+    toast(`探测完成：${r.field_status ? FIELD_STATUS_ZH[r.field_status] || r.field_status : '已记录观测'}`);
+  }, '探测');
+}
+
+async function viewIp(address) {
+  await ensureBranches();
+  const r = await api('/ips/' + encodeURIComponent(address));
+  const ip = r.ip;
+  const assign = r.assignment;
+  setTimeout(() => {
+    document.getElementById('diagBtn')?.addEventListener('click', () => diagnoseIpView(address));
+    document.getElementById('editBtn')?.addEventListener('click', () => ipFormModal(ip, () => render()));
+    document.getElementById('assignBtn')?.addEventListener('click', () => {
+      modal(`分配 ${address}`, `
+        ${field('对象类型', `<select name="object_type"><option>主机</option><option>服务器</option><option>打印机</option><option>网络设备</option><option>摄像头</option><option>其他</option></select>`)}
+        ${field('对象名称 *', '<input name="object_name" placeholder="如 FIN-PC-012" />')}
+        ${field('原因', '<input name="reason" placeholder="分配原因（记入审计）" />')}
+      `, async (mask) => {
+        await api(`/ips/${encodeURIComponent(address)}/assign`, { method: 'POST', body: { object_type: fv(mask, 'object_type'), object_name: fv(mask, 'object_name'), reason: fv(mask, 'reason') } });
+        toast('分配成功');
+        render();
+      }, '分配');
+    });
+    document.getElementById('releaseBtn')?.addEventListener('click', async () => {
+      if (!confirm(`确认释放 ${address}？`)) return;
+      try { await api(`/ips/${encodeURIComponent(address)}/release`, { method: 'POST', body: {} }); toast('已释放'); render(); } catch (e) { toast(e.message, true); }
+    });
+  }, 0);
+  return `
+    <h1><a href="#/ips">IP 台账</a> / ${esc(ip.address)} ${badge(STATUS_ZH[ip.business_status] || ip.business_status, STATUS_BADGE[ip.business_status])}</h1>
+    <div class="card">
+      <h2 style="margin-top:0">台账信息</h2>
+      <div class="kv">
+        <span class="k">MAC</span><span>${esc(ip.mac || '-')}</span>
+        <span class="k">所属网段</span><span>${ip.subnet_cidr ? `<a href="#/subnets/${ip.subnet_id}">${esc(ip.subnet_cidr)}</a>` : '-'}</span>
+        <span class="k">分支</span><span>${esc(branchName(ip.branch_id))}</span>
+        <span class="k">用途</span><span>${esc(ip.purpose || '-')}</span>
+        <span class="k">描述</span><span>${esc(ip.description || '-')}</span>
+        <span class="k">来源</span><span>${esc(ip.source || '-')}</span>
+        <span class="k">导入追溯</span><span>${ip.import_batch_id ? `批次 #${ip.import_batch_id} 行 ${ip.import_row}` : '-'}</span>
+        <span class="k">更新时间</span><span>${fmtTime(ip.updated_at)}</span>
+        ${assign ? `<span class="k">当前分配</span><span>${esc(assign.object_name || '')}（${esc(assign.object_type || '')}）自 ${fmtTime(assign.assigned_at)}${assign.reason ? `，原因：${esc(assign.reason)}` : ''}</span>` : ''}
+      </div>
+      <div class="toolbar" style="margin-top:14px">
+        <button class="btn primary" id="diagBtn">现场诊断</button>
+        ${hasCap('edit') ? '<button class="btn" id="editBtn">编辑</button>' : ''}
+        ${hasCap('allocate') ? '<button class="btn" id="assignBtn">分配</button>' : ''}
+        ${hasCap('allocate') ? '<button class="btn danger" id="releaseBtn">释放</button>' : ''}
+      </div>
+    </div>
+    <div id="diagPanel"></div>`;
+}
+
+async function diagnoseIpView(address) {
+  const panel = document.getElementById('diagPanel');
+  if (!panel) return;
+  panel.innerHTML = '<div class="card muted">诊断中…</div>';
+  try {
+    const d = await api(`/ips/${encodeURIComponent(address)}/diagnosis`);
+    const ev = d.evidence || [];
+    panel.innerHTML = `
+      <div class="card">
+        <h2 style="margin-top:0">诊断结论 ${badge(FIELD_STATUS_ZH[d.field_status] || d.field_status, FIELD_STATUS_BADGE[d.field_status])}</h2>
+        <div class="kv">
+          <span class="k">置信度</span><span>${d.confidence != null ? Math.round(d.confidence * 100) + '%' : '-'}</span>
+          <span class="k">结论说明</span><span>${esc(d.reason || d.summary || '-')}</span>
+          ${d.conflict ? `<span class="k">冲突信息</span><span class="err">${esc(typeof d.conflict === 'string' ? d.conflict : JSON.stringify(d.conflict))}</span>` : ''}
+        </div>
+        <h2>现场证据（${ev.length}）</h2>
+        ${ev.length ? `<table><tr><th>证据类型</th><th>MAC</th><th>来源</th><th>观测时间</th><th>详情</th></tr>
+          ${ev.map((x) => `<tr>
+            <td>${esc(x.evidence_type)}</td>
+            <td>${esc(x.mac || '-')}</td>
+            <td>${esc(x.source_device || x.device_name || '-')}</td>
+            <td>${fmtTime(x.observed_at)}</td>
+            <td class="muted">${esc(x.detail || x.extra || '')}</td>
+          </tr>`).join('')}</table>` : '<p class="muted">时间窗口内无现场证据。注意：设备离线/采集失败不代表目标空闲。</p>'}
+      </div>`;
+  } catch (e) {
+    panel.innerHTML = `<div class="card err">${esc(e.message)}</div>`;
+  }
+}
+
+async function viewDevices() {
+  const r = await api('/devices');
+  setTimeout(() => {
+    document.getElementById('addDevice')?.addEventListener('click', addDeviceModal);
+    document.getElementById('collectAll')?.addEventListener('click', async () => {
+      try { await api('/collect/run', { method: 'POST', body: {} }); toast('已触发全量采集'); setTimeout(render, 800); } catch (e) { toast(e.message, true); }
+    });
+    document.getElementById('reconcileAll')?.addEventListener('click', async () => {
+      try { await api('/reconcile/run', { method: 'POST', body: {} }); toast('已触发对账'); setTimeout(render, 800); } catch (e) { toast(e.message, true); }
+    });
+    document.querySelectorAll('[data-test]').forEach((b) => b.addEventListener('click', async () => {
+      try { const rr = await api(`/devices/${b.dataset.test}/test`, { method: 'POST', body: {} }); toast(rr.ok ? '连接成功' : `连接失败：${rr.error}`, !rr.ok); } catch (e) { toast(e.message, true); }
+    }));
+    document.querySelectorAll('[data-collect]').forEach((b) => b.addEventListener('click', async () => {
+      try { const rr = await api(`/devices/${b.dataset.collect}/collect`, { method: 'POST', body: {} }); toast(`采集完成：${rr.run?.observation_count ?? 0} 条观测`); setTimeout(render, 600); } catch (e) { toast(e.message, true); }
+    }));
+    document.querySelectorAll('[data-runs]').forEach((b) => b.addEventListener('click', async () => {
+      try {
+        const rr = await api(`/devices/${b.dataset.runs}/runs`);
+        modal('采集历史', `<table><tr><th>状态</th><th>完整性</th><th>观测数</th><th>开始时间</th><th>耗时</th></tr>
+          ${(rr.runs || []).map((x) => `<tr><td>${x.status}</td><td>${esc(x.completeness || '-')}</td><td>${x.observation_count ?? 0}</td><td>${fmtTime(x.started_at)}</td><td>${x.duration_ms != null ? x.duration_ms + 'ms' : '-'}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">暂无</td></tr>'}</table>`, () => {}, '关闭');
+      } catch (e) { toast(e.message, true); }
+    }));
+  }, 0);
+  return `
+    <h1>设备与采集</h1>
+    <div class="toolbar">
+      ${hasCap('device') ? '<button class="btn primary" id="addDevice">注册设备</button><button class="btn" id="collectAll">立即全量采集</button><button class="btn" id="reconcileAll">立即对账</button>' : ''}
+    </div>
+    <table>
+      <tr><th>名称</th><th>角色</th><th>厂商/型号</th><th>协议</th><th>地址</th><th>状态</th><th>最近采集</th><th>操作</th></tr>
+      ${(r.devices || []).map((d) => `<tr>
+        <td>${esc(d.name)}</td>
+        <td>${esc(d.role)}</td>
+        <td>${esc(d.vendor || '-')} ${esc(d.model || '')}</td>
+        <td>${esc(d.protocol)}</td>
+        <td>${esc(d.host || '-')}:${esc(d.port ?? '-')}</td>
+        <td>${badge(DEVICE_STATUS_ZH[d.status] || d.status, DEVICE_STATUS_BADGE[d.status])}</td>
+        <td>${fmtTime(d.last_collect_at)}</td>
+        <td>
+          ${hasCap('device') ? `<button class="btn sm" data-test="${d.id}">测试</button> <button class="btn sm" data-collect="${d.id}">采集</button>` : ''}
+          <button class="btn sm" data-runs="${d.id}">历史</button>
+        </td>
+      </tr>`).join('') || '<tr><td colspan="8" class="muted">暂无设备</td></tr>'}
+    </table>
+    <p class="muted" style="margin-top:10px">深信服 AC 在线用户接口单次最多返回 100 条，采集器按 /24 分片查询并标记完整性。</p>`;
+}
+
+function addDeviceModal() {
+  modal('注册采集设备', `
+    ${field('名称 *', '<input name="name" placeholder="如 HQ-AC-01" />')}
+    ${field('角色', `<select name="role"><option value="ac">无线控制器/AC</option><option value="switch">交换机</option><option value="router">路由器</option><option value="firewall">防火墙</option><option value="collector">采集器</option><option value="other">其他</option></select>`)}
+    ${field('厂商', `<select name="vendor"><option value="sangfor">深信服</option><option value="huawei">华为</option><option value="h3c">新华三</option><option value="cisco">思科</option><option value="other">其他</option></select>`)}
+    ${field('型号', '<input name="model" />')}
+    ${field('协议', `<select name="protocol"><option value="restful">RESTful</option><option value="netconf">NETCONF</option><option value="restconf">RESTCONF</option><option value="snmpv3">SNMPv3</option><option value="ssh_readonly">SSH 只读</option></select>`)}
+    ${field('主机/IP *', '<input name="host" />')}
+    ${field('端口', '<input name="port" type="number" placeholder="深信服 AC 默认 9999" />')}
+    ${field('凭据引用', '<input name="credential_ref" placeholder="vault://devices/hq-ac-01（不存明文密码）" />')}
+    ${field('分支', `<select name="branch_id">${branchOptions()}</select>`)}
+  `, async (mask) => {
+    await api('/devices', { method: 'POST', body: { name: fv(mask, 'name'), role: fv(mask, 'role'), vendor: fv(mask, 'vendor'), model: fv(mask, 'model'), protocol: fv(mask, 'protocol'), host: fv(mask, 'host'), port: Number(fv(mask, 'port')) || null, credential_ref: fv(mask, 'credential_ref'), branch_id: fv(mask, 'branch_id') || null } });
+    toast('设备已注册');
+    render();
+  }, '注册');
+}
+
+async function viewTickets() {
+  await ensureBranches();
+  const q = new URLSearchParams(location.hash.split('?')[1] || '');
+  const page = Number(q.get('page')) || 1;
+  const qs = new URLSearchParams({ page, limit: 20 });
+  for (const k of ['status', 'severity', 'type', 'branch_id']) if (q.get(k)) qs.set(k, q.get(k));
+  const r = await api('/tickets?' + qs.toString());
+  const setFilter = (k, v) => {
+    const cur = new URLSearchParams(location.hash.split('?')[1] || '');
+    if (v) cur.set(k, v); else cur.delete(k);
+    cur.delete('page');
+    location.hash = '#/tickets?' + cur.toString();
+  };
+  setTimeout(() => {
+    ['fstatus', 'fsev', 'ftype', 'fbranch'].forEach((id) => {
+      const map = { fstatus: 'status', fsev: 'severity', ftype: 'type', fbranch: 'branch_id' };
+      document.getElementById(id)?.addEventListener('change', (e) => setFilter(map[id], e.target.value));
+    });
+    document.getElementById('addTicket')?.addEventListener('click', addTicketModal);
+  }, 0);
+  return `
+    <h1>协同事项</h1>
+    <div class="toolbar">
+      <select id="fstatus"><option value="">全部状态</option>${Object.keys(TICKET_STATUS_ZH).map((k) => `<option value="${k}" ${q.get('status') === k ? 'selected' : ''}>${TICKET_STATUS_ZH[k]}</option>`).join('')}</select>
+      <select id="fsev"><option value="">全部级别</option>${Object.keys(SEVERITY_ZH).map((k) => `<option value="${k}" ${q.get('severity') === k ? 'selected' : ''}>${SEVERITY_ZH[k]}</option>`).join('')}</select>
+      <select id="fbranch">${branchOptions(q.get('branch_id'))}</select>
+      ${hasCap('conflict') ? '<button class="btn primary" id="addTicket">新建事项</button>' : ''}
+    </div>
+    <table>
+      <tr><th>#</th><th>标题</th><th>类型</th><th>级别</th><th>状态</th><th>IP</th><th>分支</th><th>创建时间</th></tr>
+      ${r.items.map((t) => `<tr>
+        <td>${t.id}</td>
+        <td><a href="#/tickets/${t.id}">${esc(t.title)}</a></td>
+        <td>${esc(t.type)}</td>
+        <td>${badge(SEVERITY_ZH[t.severity] || t.severity, t.severity === 'critical' || t.severity === 'high' ? 'b-red' : 'b-amber')}</td>
+        <td>${badge(TICKET_STATUS_ZH[t.status] || t.status, TICKET_STATUS_BADGE[t.status])}</td>
+        <td>${t.ip ? `<a href="#/ips/${encodeURIComponent(t.ip)}">${esc(t.ip)}</a>` : '-'}</td>
+        <td>${esc(branchName(t.branch_id))}</td>
+        <td>${fmtTime(t.created_at)}</td>
+      </tr>`).join('') || '<tr><td colspan="8" class="muted">暂无协同事项</td></tr>'}
+    </table>
+    ${pager(r.page, r.total, r.limit, (p) => { const cur = new URLSearchParams(location.hash.split('?')[1] || ''); cur.set('page', p); location.hash = '#/tickets?' + cur.toString(); })}`;
+}
+
+function addTicketModal() {
+  modal('新建协同事项', `
+    ${field('标题 *', '<input name="title" />')}
+    ${field('类型', `<select name="type"><option value="unregistered_use">疑似未登记占用</option><option value="idle_occupied">闲置/占用无证据</option><option value="ip_conflict_multi_mac">IP 冲突（多 MAC）</option><option value="mac_mismatch">台账 MAC 与现场不一致</option><option value="manual">人工事项</option></select>`)}
+    ${field('级别', `<select name="severity"><option value="low">低</option><option value="medium" selected>中</option><option value="high">高</option><option value="critical">严重</option></select>`)}
+    ${field('关联 IP', '<input name="ip" placeholder="可选" />')}
+    ${field('分支', `<select name="branch_id">${branchOptions()}</select>`)}
+    ${field('描述', '<textarea name="detail" rows="3"></textarea>')}
+  `, async (mask) => {
+    await api('/tickets', { method: 'POST', body: { title: fv(mask, 'title'), type: fv(mask, 'type'), severity: fv(mask, 'severity'), ip: fv(mask, 'ip') || null, branch_id: fv(mask, 'branch_id') || null, detail: fv(mask, 'detail') || null } });
+    toast('事项已创建');
+    render();
+  }, '创建');
+}
+
+async function viewTicket(id) {
+  await ensureBranches();
+  const r = await api('/tickets/' + id);
+  const t = r.ticket;
+  const comments = r.comments || [];
+  setTimeout(() => {
+    document.getElementById('tStatus')?.addEventListener('change', async (e) => {
+      try { await api('/tickets/' + id, { method: 'PATCH', body: { status: e.target.value } }); toast('状态已更新'); render(); } catch (err) { toast(err.message, true); render(); }
+    });
+    document.getElementById('cSubmit')?.addEventListener('click', async () => {
+      const text = document.getElementById('cText').value.trim();
+      if (!text) return;
+      try { await api(`/tickets/${id}/comments`, { method: 'POST', body: { content: text } }); render(); } catch (err) { toast(err.message, true); }
+    });
+  }, 0);
+  return `
+    <h1><a href="#/tickets">协同事项</a> / #${t.id} ${esc(t.title)} ${badge(TICKET_STATUS_ZH[t.status] || t.status, TICKET_STATUS_BADGE[t.status])}</h1>
+    <div class="card">
+      <div class="kv">
+        <span class="k">类型</span><span>${esc(t.type)}</span>
+        <span class="k">级别</span><span>${badge(SEVERITY_ZH[t.severity] || t.severity, t.severity === 'critical' || t.severity === 'high' ? 'b-red' : 'b-amber')}</span>
+        <span class="k">关联 IP</span><span>${t.ip ? `<a href="#/ips/${encodeURIComponent(t.ip)}">${esc(t.ip)}</a>` : '-'}</span>
+        <span class="k">分支</span><span>${esc(branchName(t.branch_id))}</span>
+        <span class="k">去重键</span><span class="muted">${esc(t.ticket_key || '-')}</span>
+        <span class="k">描述</span><span>${esc(t.detail ? (typeof t.detail === 'string' ? t.detail : JSON.stringify(t.detail)) : '-')}</span>
+        <span class="k">创建 / 更新</span><span>${fmtTime(t.created_at)} / ${fmtTime(t.updated_at)}</span>
+      </div>
+      ${hasCap('conflict') ? `<div class="toolbar" style="margin-top:14px">
+        <label class="muted">更新状态：</label>
+        <select id="tStatus">${Object.keys(TICKET_STATUS_ZH).map((k) => `<option value="${k}" ${t.status === k ? 'selected' : ''}>${TICKET_STATUS_ZH[k]}</option>`).join('')}</select>
+      </div>` : ''}
+    </div>
+    <div class="card"><h2 style="margin-top:0">处理记录（${comments.length}）</h2>
+      ${comments.map((c) => `<div style="border-bottom:1px solid var(--border);padding:8px 0">
+        <div><strong>${esc(c.username || ('用户#' + c.user_id))}</strong> <span class="muted">${fmtTime(c.created_at)}</span></div>
+        <div style="margin-top:4px">${esc(c.content)}</div>
+      </div>`).join('') || '<p class="muted">暂无记录</p>'}
+      <div class="toolbar" style="margin-top:12px">
+        <input id="cText" placeholder="添加处理记录…" style="flex:1" />
+        <button class="btn primary" id="cSubmit">提交</button>
+      </div>
+    </div>`;
+}
+
+async function viewImport() {
+  const r = await api('/import/batches');
+  await ensureBranches();
+  setTimeout(() => {
+    const fileInput = document.getElementById('impFile');
+    document.getElementById('impUpload')?.addEventListener('click', async () => {
+      const f = fileInput.files[0];
+      if (!f) { toast('请选择文件', true); return; }
+      const fd = new FormData();
+      fd.append('file', f);
+      const branchSel = document.getElementById('impBranch');
+      if (branchSel.value) fd.append('branch_id', branchSel.value);
+      try {
+        const res = await fetch('/api/import/upload', { method: 'POST', headers: { Authorization: `Bearer ${state.token}` }, body: fd });
+        const data = await res.json();
+        if (!res.ok) throw { message: data.message || '上传失败' };
+        toast(`上传成功，批次 #${data.batch_id}`);
+        render();
+      } catch (e) { toast(e.message || '上传失败', true); }
+    });
+    document.querySelectorAll('[data-preview]').forEach((b) => b.addEventListener('click', () => previewBatch(b.dataset.preview)));
+  }, 0);
+  return `
+    <h1>导入中心</h1>
+    <div class="card">
+      <h2 style="margin-top:0">上传台账文件（CSV / XLSX）</h2>
+      <div class="toolbar">
+        <input type="file" id="impFile" accept=".csv,.xlsx,.xls,.zip" />
+        <select id="impBranch">${branchOptions()}</select>
+        <button class="btn primary" id="impUpload">上传并预检</button>
+      </div>
+      <p class="muted" style="font-size:12px">导入采用确认式入库：预检会将与台账不一致的行标记为冲突，冲突行仅在您显式勾选"覆盖"时才会写入；每行保留批次与行号追溯。</p>
+    </div>
+    <div class="card"><h2 style="margin-top:0">导入批次</h2>
+      <table><tr><th>#</th><th>文件名</th><th>类型</th><th>状态</th><th>上传人</th><th>上传时间</th><th>统计</th><th>操作</th></tr>
+      ${(r.batches || []).map((b) => `<tr>
+        <td>${b.id}</td>
+        <td>${esc(b.filename)}</td>
+        <td>${esc(b.file_type)}</td>
+        <td>${b.status === 'committed' ? badge('已入库', 'b-green') : badge(b.status === 'uploaded' ? '待确认' : b.status, b.status === 'failed' ? 'b-red' : 'b-amber')}</td>
+        <td>${esc(b.username || ('#' + b.user_id))}</td>
+        <td>${fmtTime(b.created_at)}</td>
+        <td class="muted">${b.stats_json ? esc(typeof b.stats_json === 'string' ? b.stats_json : JSON.stringify(b.stats_json)) : '-'}</td>
+        <td>
+          <button class="btn sm" data-preview="${b.id}">预览/预检</button>
+          <a class="btn sm" href="javascript:void(0)" onclick="window.__traces(${b.id})">追溯</a>
+        </td>
+      </tr>`).join('') || '<tr><td colspan="8" class="muted">暂无导入批次</td></tr>'}
+      </table>
+    </div>`;
+}
+
+window.__traces = async (id) => {
+  try {
+    const r = await api(`/import/batches/${id}/traces`);
+    modal(`批次 #${id} 行级追溯`, r.traces.length
+      ? `<table><tr><th>行号</th><th>地址</th><th>状态</th><th>来源</th></tr>${r.traces.map((x) => `<tr><td>${x.import_row}</td><td><a href="#/ips/${encodeURIComponent(x.address)}">${esc(x.address)}</a></td><td>${badge(STATUS_ZH[x.business_status] || x.business_status, STATUS_BADGE[x.business_status])}</td><td>${esc(x.source || '-')}</td></tr>`).join('')}</table>`
+      : '<p class="muted">该批次尚未写入任何台账行</p>', () => {}, '关闭');
+  } catch (e) { toast(e.message, true); }
+};
+
+async function previewBatch(id) {
+  try {
+    const p = await api(`/import/batches/${id}/preview?target=ip`);
+    const counts = p.counts || {};
+    const mapping = p.mapping || {};
+    const hasConflict = (counts.conflict || 0) > 0;
+    modal(`批次 #${id} 预检：${p.filename}`, `
+      <div class="kv" style="margin-bottom:12px">
+        <span class="k">表头列</span><span>${(p.header || []).map((h) => `<span class="tag">${esc(h)}</span>`).join('')}</span>
+        <span class="k">字段映射</span><span>${Object.entries(mapping).filter(([, v]) => v != null).map(([k, v]) => `<span class="tag">${esc(k)} ← ${esc(v)}</span>`).join('') || '<span class="err">未识别到任何字段</span>'}</span>
+        ${p.sheets && p.sheets.length > 1 ? `<span class="k">工作表</span><span>${p.sheets.map((s) => esc(typeof s === 'string' ? s : s.name)).join('、')}</span>` : ''}
+        <span class="k">预检统计</span><span>
+          ${badge('正常 ' + (counts.ok || 0), 'b-green')}
+          ${badge('警告 ' + (counts.warning || 0), 'b-amber')}
+          ${badge('错误 ' + (counts.error || 0), 'b-red')}
+          ${badge('冲突 ' + (counts.conflict || 0), 'b-purple')}
+        </span>
+      </div>
+      <div style="max-height:300px;overflow-y:auto">
+        <table><tr><th>行</th><th>级别</th><th>地址</th><th>状态</th><th>问题</th></tr>
+        ${(p.sample || []).map((x) => `<tr>
+          <td>${x.row_no}</td>
+          <td>${badge(LEVEL_ZH[x.level] || x.level, LEVEL_BADGE[x.level])}</td>
+          <td>${esc(x.data?.address || '-')}</td>
+          <td>${esc(STATUS_ZH[x.data?.business_status] || x.data?.business_status || '-')}</td>
+          <td class="muted">${[...(x.errors || []), ...(x.warnings || [])].map((e) => esc(typeof e === 'string' ? e : e.message || JSON.stringify(e))).join('；') || '-'}</td>
+        </tr>`).join('')}</table>
+      </div>
+      <div class="toolbar" style="margin-top:14px">
+        ${hasConflict ? '<label><input type="checkbox" id="ovCheck" /> 覆盖冲突行（用文件值更新台账）</label>' : '<span class="muted">无冲突行，可直接入库</span>'}
+      </div>
+      <div class="actions">
+        <button class="btn" onclick="this.closest('.modal-mask').remove()">关闭</button>
+        <button class="btn primary" id="commitBtn">确认入库</button>
+      </div>
+    `, () => {}, null);
+    setTimeout(() => {
+      document.getElementById('commitBtn')?.addEventListener('click', async () => {
+        const overwrite = Boolean(document.getElementById('ovCheck')?.checked);
+        if (hasConflict && !overwrite && !confirm('存在冲突行，未勾选覆盖时冲突行将被跳过。确认继续？')) return;
+        try {
+          const rr = await api(`/import/batches/${id}/commit`, { method: 'POST', body: { target: 'ip', overwrite } });
+          const st = rr.stats || {};
+          toast(`入库完成：新增 ${st.inserted || 0}，更新 ${st.updated || 0}，跳过 ${st.skipped || 0}`);
+          document.querySelector('.modal-mask')?.remove();
+          render();
+        } catch (e) { toast(e.message, true); }
+      });
+    }, 0);
+  } catch (e) { toast(e.message, true); }
+}
+
+async function viewAudit() {
+  const q = new URLSearchParams(location.hash.split('?')[1] || '');
+  const page = Number(q.get('page')) || 1;
+  const qs = new URLSearchParams({ page, limit: 50 });
+  for (const k of ['action', 'entity_type', 'username']) if (q.get(k)) qs.set(k, q.get(k));
+  const r = await api('/audit/logs?' + qs.toString());
+  const setFilter = (k, v) => {
+    const cur = new URLSearchParams(location.hash.split('?')[1] || '');
+    if (v) cur.set(k, v); else cur.delete(k);
+    cur.delete('page');
+    location.hash = '#/audit?' + cur.toString();
+  };
+  setTimeout(() => {
+    document.getElementById('faction')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') setFilter('action', e.target.value.trim()); });
+    document.getElementById('fuser')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') setFilter('username', e.target.value.trim()); });
+    document.getElementById('fentity')?.addEventListener('change', (e) => setFilter('entity_type', e.target.value));
+  }, 0);
+  return `
+    <h1>审计日志</h1>
+    <div class="toolbar">
+      <input id="faction" placeholder="操作类型，如 login / ip.update" value="${esc(q.get('action') || '')}" />
+      <input id="fuser" placeholder="用户名" value="${esc(q.get('username') || '')}" />
+      <select id="fentity"><option value="">全部对象类型</option>${['ip', 'subnet', 'device', 'ticket', 'user', 'branch', 'import_batch', 'auth', 'config', 'collect'].map((t) => `<option value="${t}" ${q.get('entity_type') === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+    </div>
+    <table>
+      <tr><th>时间</th><th>用户</th><th>操作</th><th>对象</th><th>分支</th><th>结果</th><th>变更详情</th></tr>
+      ${r.items.map((a) => `<tr>
+        <td style="white-space:nowrap">${fmtTime(a.created_at)}</td>
+        <td>${esc(a.username || '-')}</td>
+        <td>${esc(a.action)}</td>
+        <td>${esc(a.entity_type || '-')} ${a.entity_id != null ? '#' + esc(a.entity_id) : ''}</td>
+        <td>${esc(branchName(a.branch_id))}</td>
+        <td>${a.result === 'fail' || a.result === 'denied' ? badge('失败', 'b-red') : badge('成功', 'b-green')}</td>
+        <td class="muted" style="max-width:380px;overflow:hidden;text-overflow:ellipsis">${esc(a.after ? JSON.stringify(a.after).slice(0, 160) : (a.reason || '-'))}</td>
+      </tr>`).join('') || '<tr><td colspan="7" class="muted">暂无日志</td></tr>'}
+    </table>
+    ${pager(r.page, r.total, r.limit, (p) => { const cur = new URLSearchParams(location.hash.split('?')[1] || ''); cur.set('page', p); location.hash = '#/audit?' + cur.toString(); })}`;
+}
+
+async function viewAi() {
+  setTimeout(() => {
+    document.getElementById('aiSend')?.addEventListener('click', sendAi);
+    document.getElementById('aiInput')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendAi(); });
+    document.querySelectorAll('[data-q]').forEach((b) => b.addEventListener('click', () => { document.getElementById('aiInput').value = b.dataset.q; sendAi(); }));
+  }, 0);
+  return `
+    <h1>AI 查询助手</h1>
+    <p class="muted" style="margin-bottom:12px">AI 仅做理解与解释：问题会被解析为意图，实际数据一律来自规则引擎与台账，并受您当前权限过滤。</p>
+    <div class="toolbar">
+      <button class="btn sm" data-q="10.0.0.5 这个 IP 现在有人在用吗？">查 IP 使用</button>
+      <button class="btn sm" data-q="10.0.1.0/24 里找 5 个空闲 IP">找空闲 IP</button>
+      <button class="btn sm" data-q="目前有哪些 IP 冲突？">冲突清单</button>
+      <button class="btn sm" data-q="有哪些未登记的 IP？">未登记占用</button>
+      <button class="btn sm" data-q="台账里各状态的 IP 统计">台账统计</button>
+    </div>
+    <div class="chat" id="aiChat"></div>
+    <div class="toolbar" style="margin-top:14px">
+      <input id="aiInput" placeholder="例如：10.0.0.5 是否在用？/ 10.0.2.0/24 使用率如何？" style="flex:1" />
+      <button class="btn primary" id="aiSend">提问</button>
+    </div>`;
+}
+
+async function sendAi() {
+  const input = document.getElementById('aiInput');
+  const chat = document.getElementById('aiChat');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+  chat.insertAdjacentHTML('beforeend', `<div class="msg q">${esc(q)}</div>`);
+  const holder = document.createElement('div');
+  holder.className = 'msg a muted';
+  holder.textContent = '思考中…';
+  chat.appendChild(holder);
+  try {
+    const r = await api('/ai/query', { method: 'POST', body: { question: q } });
+    let html = `<strong>意图：</strong>${esc(r.intent || '-')}<br><br>${esc(r.answer || '')}`;
+    if (r.data && Array.isArray(r.data) && r.data.length) {
+      const rows = r.data.slice(0, 20);
+      const cols = Object.keys(rows[0] || {});
+      html += `<div style="overflow-x:auto;margin-top:8px"><table><tr>${cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr>${rows.map((row) => `<tr>${cols.map((c) => `<td>${esc(row[c] ?? '-')}</td>`).join('')}</tr>`).join('')}</table></div>`;
+    }
+    if (r.caveats && r.caveats.length) html += `<div class="caveat">${r.caveats.map(esc).join('；')}</div>`;
+    holder.classList.remove('muted');
+    holder.innerHTML = html;
+  } catch (e) {
+    holder.classList.remove('muted');
+    holder.innerHTML = `<span class="err">${esc(e.message)}</span>`;
+  }
+}
+
+async function viewAdmin() {
+  await ensureBranches();
+  const users = await api('/admin/users');
+  const windows = await api('/admin/windows');
+  setTimeout(() => {
+    document.getElementById('addBranch')?.addEventListener('click', () => {
+      modal('新增分支', `
+        ${field('名称 *', '<input name="name" />')}
+        ${field('编码 *', '<input name="code" placeholder="如 SH" />')}
+        ${field('负责人', '<input name="owner" />')}
+      `, async (mask) => {
+        await api('/admin/branches', { method: 'POST', body: { name: fv(mask, 'name'), code: fv(mask, 'code'), owner: fv(mask, 'owner') } });
+        state.branches = [];
+        toast('分支已创建');
+        render();
+      }, '创建');
+    });
+    document.getElementById('addUser')?.addEventListener('click', addUserModal);
+    document.querySelectorAll('[data-edituser]').forEach((b) => b.addEventListener('click', () => {
+      const u = (users.users || []).find((x) => x.id === Number(b.dataset.edituser));
+      if (u) editUserModal(u);
+    }));
+    document.querySelectorAll('[data-win]').forEach((inp) => inp.addEventListener('change', async () => {
+      const [et, pk, sk] = inp.dataset.win.split('|');
+      try {
+        await api('/admin/windows', { method: 'PUT', body: { scope: pk, scope_id: sk === 'null' ? null : Number(sk), evidence_type: et, window_min: Number(inp.value) } });
+        toast('时间窗口已更新');
+      } catch (e) { toast(e.message, true); render(); }
+    }));
+  }, 0);
+  return `
+    <h1>系统管理</h1>
+    <div class="tabs">
+      <button class="active" data-tab="branches">分支组织</button>
+      <button data-tab="users">用户与授权</button>
+      <button data-tab="windows">诊断时间窗口</button>
+    </div>
+    <div id="tab-branches">
+      <div class="toolbar">${state.me && state.me.is_hq_admin ? '<button class="btn primary" id="addBranch">新增分支</button>' : ''}</div>
+      <table><tr><th>#</th><th>名称</th><th>编码</th><th>负责人</th><th>上级</th></tr>
+      ${(state.branches || []).map((b) => `<tr><td>${b.id}</td><td>${esc(b.name)}</td><td>${esc(b.code)}</td><td>${esc(b.owner || '-')}</td><td>${b.parent_id ? '#' + b.parent_id : '-'}</td></tr>`).join('')}
+      </table>
+    </div>
+    <div id="tab-users" style="display:none">
+      <div class="toolbar"><button class="btn primary" id="addUser">新增用户</button></div>
+      <table><tr><th>#</th><th>用户名</th><th>姓名</th><th>部门</th><th>状态</th><th>授权分支</th><th>操作</th></tr>
+      ${(users.users || []).map((u) => `<tr>
+        <td>${u.id}</td>
+        <td>${esc(u.username)}</td>
+        <td>${esc(u.display_name || '-')}</td>
+        <td>${esc(u.department || '-')}</td>
+        <td>${u.status === 'active' ? badge('启用', 'b-green') : badge('停用', 'b-gray')}</td>
+        <td>${(u.grants || []).map((g) => `<span class="tag">${esc(branchName(g.branch_id))}·${ROLE_ZH[g.role] || g.role}</span>`).join('') || '<span class="muted">无</span>'}</td>
+        <td><button class="btn sm" data-edituser="${u.id}">编辑</button></td>
+      </tr>`).join('')}
+      </table>
+    </div>
+    <div id="tab-windows" style="display:none">
+      <p class="muted" style="margin-bottom:10px">各类现场证据的有效期（分钟）。窗口外的证据不参与诊断，避免把过期观测当作事实。</p>
+      <table><tr><th>证据类型</th><th>范围</th><th>窗口（分钟）</th></tr>
+      ${(windows.evidence_types || []).map((et) => {
+        const found = (windows.windows || []).find((w) => w.evidence_type === et);
+        return `<tr><td>${esc(et)}</td><td>${found && found.scope_id ? `分支 #${found.scope_id}` : '全局'}</td>
+          <td><input type="number" style="width:100px" value="${found ? found.window_min : ''}" placeholder="默认" data-win="${et}|global|null" /></td></tr>`;
+      }).join('')}
+      </table>
+    </div>`;
+}
+
+function addUserModal() {
+  modal('新增用户', `
+    ${field('用户名 *', '<input name="username" />')}
+    ${field('密码 *', '<input name="password" type="password" />')}
+    ${field('姓名', '<input name="display_name" />')}
+    ${field('邮箱', '<input name="email" />')}
+    ${field('部门', '<input name="department" />')}
+    ${field('授权分支与角色', `<div id="grantRows"></div><button class="btn sm" type="button" id="addGrant">+ 添加授权</button>`)}
+  `, async (mask) => {
+    const grants = [];
+    mask.querySelectorAll('.grant-row').forEach((row) => {
+      const bid = row.querySelector('select').value;
+      const role = row.querySelectorAll('select')[1].value;
+      if (bid) grants.push({ branch_id: Number(bid), role });
+    });
+    await api('/admin/users', { method: 'POST', body: { username: fv(mask, 'username'), password: fv(mask, 'password'), display_name: fv(mask, 'display_name'), email: fv(mask, 'email'), department: fv(mask, 'department'), grants } });
+    toast('用户已创建');
+    render();
+  }, '创建');
+  setTimeout(() => {
+    const addGrantRow = (container) => {
+      const row = document.createElement('div');
+      row.className = 'grant-row';
+      row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px';
+      row.innerHTML = `<select style="flex:1">${branchOptions()}</select>
+        <select>${Object.keys(ROLE_ZH).filter((r) => r !== 'hq_admin').map((r) => `<option value="${r}">${ROLE_ZH[r]}</option>`).join('')}</select>
+        <button class="btn sm" type="button">删</button>`;
+      row.querySelector('button').addEventListener('click', () => row.remove());
+      container.appendChild(row);
+    };
+    const c = document.getElementById('grantRows');
+    document.getElementById('addGrant').addEventListener('click', () => addGrantRow(c));
+    if (c) addGrantRow(c);
+  }, 0);
+}
+
+function editUserModal(u) {
+  modal(`编辑用户 ${u.username}`, `
+    ${field('状态', `<select name="status"><option value="active" ${u.status === 'active' ? 'selected' : ''}>启用</option><option value="disabled" ${u.status !== 'active' ? 'selected' : ''}>停用</option></select>`)}
+    ${field('姓名', `<input name="display_name" value="${esc(u.display_name || '')}" />`)}
+    ${field('邮箱', `<input name="email" value="${esc(u.email || '')}" />`)}
+    ${field('部门', `<input name="department" value="${esc(u.department || '')}" />`)}
+    ${field('重置密码（留空不改）', '<input name="password" type="password" />')}
+    ${field('授权分支与角色', `<div id="grantRows"></div><button class="btn sm" type="button" id="addGrant">+ 添加授权</button>`)}
+  `, async (mask) => {
+    const grants = [];
+    mask.querySelectorAll('.grant-row').forEach((row) => {
+      const bid = row.querySelector('select').value;
+      const role = row.querySelectorAll('select')[1].value;
+      if (bid) grants.push({ branch_id: Number(bid), role });
+    });
+    const body = { status: fv(mask, 'status'), display_name: fv(mask, 'display_name'), email: fv(mask, 'email'), department: fv(mask, 'department'), grants };
+    const pwd = fv(mask, 'password');
+    if (pwd) body.password = pwd;
+    await api('/admin/users/' + u.id, { method: 'PATCH', body });
+    toast('用户已更新');
+    render();
+  }, '保存');
+  setTimeout(() => {
+    const c = document.getElementById('grantRows');
+    const addGrantRow = (container, g) => {
+      const row = document.createElement('div');
+      row.className = 'grant-row';
+      row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px';
+      row.innerHTML = `<select style="flex:1">${branchOptions(g ? g.branch_id : null)}</select>
+        <select>${Object.keys(ROLE_ZH).filter((r) => r !== 'hq_admin').map((r) => `<option value="${r}" ${g && g.role === r ? 'selected' : ''}>${ROLE_ZH[r]}</option>`).join('')}</select>
+        <button class="btn sm" type="button">删</button>`;
+      row.querySelector('button').addEventListener('click', () => row.remove());
+      container.appendChild(row);
+    };
+    document.getElementById('addGrant').addEventListener('click', () => addGrantRow(c));
+    (u.grants || []).forEach((g) => addGrantRow(c, g));
+    if (!(u.grants || []).length) addGrantRow(c);
+  }, 0);
+}
+
+function setupAdminTabs() {
+  setTimeout(() => {
+    document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
+      document.querySelectorAll('.tabs button').forEach((x) => x.classList.remove('active'));
+      b.classList.add('active');
+      ['branches', 'users', 'windows'].forEach((t) => {
+        const el = document.getElementById('tab-' + t);
+        if (el) el.style.display = b.dataset.tab === t ? '' : 'none';
+      });
+    }));
+  }, 0);
+}
+
+window.addEventListener('hashchange', render);
+if (!location.hash) location.hash = '#/dashboard';
+render();
+const adminTabObserver = new MutationObserver(() => { if (document.querySelector('.tabs')) setupAdminTabs(); });
+adminTabObserver.observe(document.body, { childList: true, subtree: true });
+</script>
+</body>
+</html>
